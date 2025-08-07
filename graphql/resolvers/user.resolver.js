@@ -5,11 +5,22 @@ import { formatValidationErrors } from "../../utils/responseHelpers.js";
 
 export const userResolvers = {
   Query: {
-    users: async (_, __, { prisma }) => prisma.user.findMany(),
+    users: async (_, __, { prisma }) =>
+      prisma.user.findMany({
+        orderBy: { createdAt: "asc" },
+        select: {
+          userId: true,
+          first_name: true,
+          last_name: true,
+          username: true,
+          email: true,
+          status: true,
+        },
+      }),
   },
   Mutation: {
     createUser: async (_, args, { prisma }) => {
-      console.log("createUser resolver called");
+
       const validation = userValidators.safeParse(args.input);
       if (!validation.success) {
         return errorResponse({
@@ -31,11 +42,7 @@ export const userResolvers = {
           });
         }
         const { password, ...rest } = args.input;
-
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        console.log("rest", rest);
-        console.log("Hashed password:", hashedPassword);
         const user = await prisma.user.create({
           data: {
             ...rest,
@@ -43,34 +50,45 @@ export const userResolvers = {
           },
         });
 
-          return {
-              success: true,
-              message:'User created successfully.',
-              user: {
-                  id: user.id,
-                  username: user.username,
-                  email: user.email,
-              },
-          }
-        ;
+        return {
+          success: true,
+          message: "User created successfully.",
+          user: {
+            userId: user.userId,
+            username: user.username,
+            email: user.email,
+          },
+        };
       } catch (error) {
         console.error(error);
         return errorResponse({ message: "Failed to create user.", data: null });
       }
     },
 
-    editUser: async (_, args, { prisma }) => {
+    editUser: async (_, args, { prisma, currentUser }) => {
       const { password, ...rest } = args.input;
+      /*   if (currentUser.status !== 'ADMIN' && currentUser.userId !== args.userId) {
+           return errorResponse({
+                message: 'Unauthorized to delete this user.',
+              });
+      } */
+
       try {
+
+        const user = await prisma.user.findUnique({ where: { userId: args.userId } });
+          if (!user) {
+            return errorResponse({ message: "User not found." , data: null});
+          }
+        
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await prisma.user.update({
-          where: { id: args.id },
+        const userUpdate = await prisma.user.update({
+          where: { userId: args.userId },
           data: { ...rest, password: hashedPassword },
         });
 
         return successResponse({
           message: "User updated successfully.",
-          data: user,
+          data: userUpdate,
         });
       } catch (error) {
         return errorResponse({
@@ -81,14 +99,26 @@ export const userResolvers = {
     },
 
     deleteUser: async (_, args, { prisma }) => {
+      /*     if (currentUser.status !== 'ADMIN' && currentUser.userId !== args.userId) {
+           return errorResponse({
+                message: 'Unauthorized to delete this user.',
+              });
+       } */
+
       try {
-        const user = await prisma.user.delete({
-          where: { id: args.id },
+
+        const user = await prisma.user.findUnique({ where: { userId: args.userId } });
+          if (!user) {
+            return errorResponse({ message: "User not found.", data: null });
+          }
+
+        const userDelete = await prisma.user.delete({
+          where: { id: args.userId },
         });
 
         return successResponse({
           message: "User deleted successfully.",
-          data: user,
+          data: userDelete,
         });
       } catch (error) {
         return errorResponse({

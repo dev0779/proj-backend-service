@@ -7,13 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+  SUPERVISOR
+  VISITOR
+  IT
+  SUPPORT
+  HR
+}
+
 model User {
   id         Int     @id @default(autoincrement())
+  userId     String  @default (uuid()) @unique
   first_name String? @db.VarChar(50)
   last_name  String? @db.VarChar(50)
   username   String? @unique @db.VarChar(50)
   email      String? @db.VarChar(100)
   password   String? @db.VarChar(100)
-  status     String? @db.VarChar(20)
+  status     UserRole? @default(USER)
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
   @@map("users") 
 }

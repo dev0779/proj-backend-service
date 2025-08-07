@@ -1,32 +1,46 @@
 import { gql } from "apollo-server-express";
 
 export const userTypeDefs = gql`
+  enum UserRole {
+    ADMIN
+    USER
+    SUPERVISOR
+    VISITOR
+    IT
+    SUPPORT
+    HR
+  }
+
+  scalar DateTime
+
   type User {
     id: Int!
-    first_name: String!
-    last_name: String!
+    userId: String!
+    first_name: String
+    last_name: String
     username: String!
     email: String!
-    password: String!
-    status: String!
+    status: UserRole!
+    createdAt: DateTime!
+    updatedAt: DateTime!
   }
 
   input CreateUserInput {
-    first_name: String
-    last_name: String
-    email: String
-    username: String
-    password: String
-    status: String
+    first_name: String!
+    last_name: String!
+    email: String!
+    username: String!
+    password: String!
+    status: UserRole
   }
 
   input UpdateUserInput {
     first_name: String
     last_name: String
-    email: String
-    username: String
-    password: String
-    status: String
+    email: String!
+    username: String!
+    password: String!
+    status: UserRole
   }
 
   type Query {
@@ -38,9 +52,22 @@ export const userTypeDefs = gql`
     message: String!
     user: User
   }
+
+  type UpdateUserResponse {
+    success: Boolean!
+    message: String!
+    data: User
+  }
+
+  type DeleteUserResponse {
+    success: Boolean!
+    message: String!
+    data: User
+  }
+
   type Mutation {
     createUser(input: CreateUserInput!): CreateUserResponse!
-    editUser(id: Int!, input: UpdateUserInput!): User!
-    deleteUser(id: Int!): User!
+    editUser(userId: String!, input: UpdateUserInput!): UpdateUserResponse!
+    deleteUser(userId: String!): DeleteUserResponse!
   }
 `;
