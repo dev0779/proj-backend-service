@@ -20,25 +20,24 @@ export const userResolvers = {
   },
   Mutation: {
     createUser: async (_, args, { prisma }) => {
-
       const validation = userValidators.safeParse(args.input);
       if (!validation.success) {
         return errorResponse({
           message: "Validation failed.",
           errors: formatValidationErrors(validation.error),
+          data: null,
         });
       }
 
       try {
-        const findUser = await prisma.user.findUnique({
+        const existingUser = await prisma.user.findUnique({
           where: { username: args.input.username },
         });
-        if (findUser) {
+        if (existingUser) {
           return errorResponse({
             message: "Username is taken.",
-            errors: [
-              { field: "username", message: "Username is already in use." },
-            ],
+            errors: [{ field: "username", message: "Username is already in use." }],
+            data: null,
           });
         }
         const { password, ...rest } = args.input;
@@ -50,79 +49,161 @@ export const userResolvers = {
           },
         });
 
-        return {
-          success: true,
+        return successResponse({
           message: "User created successfully.",
-          user: {
+          data: {
             userId: user.userId,
             username: user.username,
             email: user.email,
           },
-        };
-      } catch (error) {
-        console.error(error);
-        return errorResponse({ message: "Failed to create user.", data: null });
-      }
-    },
-
-    editUser: async (_, args, { prisma, currentUser }) => {
-      const { password, ...rest } = args.input;
-      /*   if (currentUser.status !== 'ADMIN' && currentUser.userId !== args.userId) {
-           return errorResponse({
-                message: 'Unauthorized to delete this user.',
-              });
-      } */
-
-      try {
-
-        const user = await prisma.user.findUnique({ where: { userId: args.userId } });
-          if (!user) {
-            return errorResponse({ message: "User not found." , data: null});
-          }
-        
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const userUpdate = await prisma.user.update({
-          where: { userId: args.userId },
-          data: { ...rest, password: hashedPassword },
-        });
-
-        return successResponse({
-          message: "User updated successfully.",
-          data: userUpdate,
         });
       } catch (error) {
+        console.error("createUser error:", error);
         return errorResponse({
-          message: "Failed to update user.",
+          message: "Failed to create user.",
+          errors: [],
           data: null,
         });
       }
     },
 
-    deleteUser: async (_, args, { prisma }) => {
-      /*     if (currentUser.status !== 'ADMIN' && currentUser.userId !== args.userId) {
-           return errorResponse({
-                message: 'Unauthorized to delete this user.',
-              });
-       } */
+    editUser: async (_, { input }, { prisma, currentUser }) => {
+      if (!currentUser) {
+        return errorResponse({
+          message: "Not authenticated",
+          errors: [],
+          data: null,
+        });
+      }
 
       try {
+        const updateData = { ...input };
 
-        const user = await prisma.user.findUnique({ where: { userId: args.userId } });
-          if (!user) {
-            return errorResponse({ message: "User not found.", data: null });
-          }
+        if (input.password) {
+          updateData.password = await bcrypt.hash(input.password, 10);
+        } else {
+          if ("password" in updateData) delete updateData.password;
+        }
 
-        const userDelete = await prisma.user.delete({
-          where: { id: args.userId },
+        const updatedUser = await prisma.user.update({
+          where: { userId: currentUser.userId },
+          data: updateData,
+        });
+
+        return successResponse({
+          message: "User updated successfully",
+          data: updatedUser,
+        });
+      } catch (error) {
+        console.error("editUser error:", error);
+        return errorResponse({
+          message: "Failed to update user",
+          errors: [],
+          data: null,
+        });
+      }
+    },
+
+    updateUser: async (_, { userId, input, adminPassword }, { prisma, currentUser }) => {
+      if (!currentUser) {
+        return errorResponse({
+          message: "Not authenticated",
+          errors: [],
+          data: null,
+        });
+      }
+
+      if (currentUser.status !== "ADMIN") {
+        return errorResponse({
+          message: "Not authorized",
+          errors: [],
+          data: null,
+        });
+      }
+
+      try {
+        const adminUser = await prisma.user.findUnique({
+          where: { userId: currentUser.userId },
+        });
+
+        const valid = await bcrypt.compare(adminPassword, adminUser.password);
+        if (!valid) {
+          return errorResponse({
+            message: "Invalid admin password",
+            errors: [],
+            data: null,
+          });
+        }
+
+        const updateData = { ...input };
+        if (input.password) {
+          updateData.password = await bcrypt.hash(input.password, 10);
+        } else {
+          if ("password" in updateData) delete updateData.password;
+        }
+
+        const updatedUser = await prisma.user.update({
+          where: { userId },
+          data: updateData,
+        });
+
+        return successResponse({
+          message: "User updated successfully",
+          data: updatedUser,
+        });
+      } catch (error) {
+        console.error("updateUser error:", error);
+        return errorResponse({
+          message: "Failed to update user",
+          errors: [],
+          data: null,
+        });
+      }
+    },
+
+    deleteUser: async (_, { userId }, { prisma, currentUser }) => {
+      if (!currentUser) {
+        return errorResponse({
+          message: "Not authenticated",
+          errors: [],
+          data: null,
+        });
+      }
+
+      if (
+        currentUser.status !== "ADMIN" &&
+        currentUser.status !== "SUPERVISOR"
+      ) {
+        return errorResponse({
+          message: "Not authorized",
+          errors: [],
+          data: null,
+        });
+      }
+
+      try {
+        const user = await prisma.user.findUnique({ where: { userId } });
+        if (!user) {
+          return errorResponse({
+            message: "User not found.",
+            errors: [],
+            data: null,
+          });
+        }
+
+        const deletedUser = await prisma.user.delete({
+          where: { userId },
         });
 
         return successResponse({
           message: "User deleted successfully.",
-          data: userDelete,
+          data: deletedUser,
         });
       } catch (error) {
+        console.error("deleteUser error:", error);
         return errorResponse({
           message: "Failed to delete user.",
+          errors: [],
           data: null,
         });
       }

@@ -5,7 +5,7 @@ export const formatValidationErrors = (zodError) => {
   }));
 };
 
-export const successResponse = ({ message, data }) => ({
+export const successResponse = ({ message, data  }) => ({
   success: true,
   message,
   data,

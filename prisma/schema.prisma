@@ -18,15 +18,17 @@ enum UserRole {
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
-  userId     String  @default (uuid()) @unique
-  first_name String? @db.VarChar(50)
-  last_name  String? @db.VarChar(50)
-  username   String? @unique @db.VarChar(50)
-  email      String? @db.VarChar(100)
-  password   String? @db.VarChar(100)
-  status     UserRole? @default(USER)
-  createdAt  DateTime? @default(now())
-  updatedAt  DateTime? @updatedAt
-  @@map("users") 
+  id           Int       @id @default(autoincrement())
+  userId       String    @default(uuid()) @unique
+  first_name   String?   @db.VarChar(50)
+  last_name    String?   @db.VarChar(50)
+  username     String?   @unique @db.VarChar(50)
+  email        String?   @db.VarChar(100)
+  password     String?   @db.VarChar(100)
+  status       UserRole? @default(USER)
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @updatedAt
+  lastLoggedIn DateTime?
+  
+  @@map("users")
 }

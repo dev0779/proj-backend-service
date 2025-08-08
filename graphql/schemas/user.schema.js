@@ -34,12 +34,20 @@ export const userTypeDefs = gql`
     status: UserRole
   }
 
-  input UpdateUserInput {
+  input EditUserInput {
     first_name: String
     last_name: String
     email: String!
     username: String!
     password: String!
+  }
+
+  input UpdateUserInput {
+    username: String
+    email: String
+    first_name: String
+    last_name: String
+    password: String
     status: UserRole
   }
 
@@ -67,7 +75,12 @@ export const userTypeDefs = gql`
 
   type Mutation {
     createUser(input: CreateUserInput!): CreateUserResponse!
-    editUser(userId: String!, input: UpdateUserInput!): UpdateUserResponse!
+    editUser(input: EditUserInput!): UpdateUserResponse!
+    updateUser(
+      userId: String!
+      input: UpdateUserInput
+      adminPassword: String!
+    ): UpdateUserResponse!
     deleteUser(userId: String!): DeleteUserResponse!
   }
 `;
