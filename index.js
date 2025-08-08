@@ -9,28 +9,29 @@ const prisma = new PrismaClient();
 
 app.use(express.json());
 
-/* app.get("/users", async (req, res) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+
+app.use(cookieParser());
+
+app.use((req, res, next) => {
+  const token = req.cookies['token'];
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      req.user = decoded;
+    }
+  }
+  next();
 });
 
-app.post("/users", async (req, res) => {
-  const { first_name, last_name, email, username, password, status } = req.body;
-  try {
-    const newUser = await prisma.user.create({
-      data: { first_name, last_name, email, username, password, status },
-    });
-    res.json(newUser);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to create user" });
-  }
-}); */
 
 // GraphQL
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: () => ({ prisma }),
+  context: ({ req }) => ({
+    user: req.user,
+    prisma
+  }),
 });
 
 async function startServer() {
