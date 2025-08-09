@@ -1,12 +1,11 @@
 import { errorResponse, successResponse } from "../../utils/responseHelpers.js";
 import { signToken, verifyPassword } from "../../auth/auth.js";
 
-
 export const authResolver = {
   Query: {
-    currentUser: async (_, _, { prisma, user }) => {
+    currentUser: async (root, args, { prisma, user }) => {
       if (!user || !user.userId) {
-        return errorResponse({ message: 'Not authenticated', data: null });
+        return errorResponse({ message: "Not authenticated", data: null });
       }
 
       const currentUser = await prisma.user.findUnique({
@@ -14,37 +13,49 @@ export const authResolver = {
       });
 
       if (!currentUser) {
-        return errorResponse({ message: 'User not Found', data: null})
+        return errorResponse({ message: "User not Found", data: null });
       }
 
       return successResponse({
-        message: `Welcome back ${currentUser.username}`, data: {
+        message: `Welcome back ${currentUser.username}`,
+        data: {
           user: {
-          userId: currentUser.userId,
-          username: currentUser.username,
-          first_name: currentUser.first_name,
-          last_name: currentUser.last_name,
-          email: currentUser.email,
-          status: currentUser.status,
-          lastLoggedIn: currentUser.lastLoggedIn,
-        }
-      }})
-    }
-   
- },
+            userId: currentUser.userId,
+            username: currentUser.username,
+            firstName: currentUser.firstName,
+            lastName: currentUser.lastName,
+            email: currentUser.email,
+            status: currentUser.status,
+            lastLoggedIn: currentUser.lastLoggedIn,
+          },
+        },
+      });
+    },
+  },
   Mutation: {
-    login: async (_, { username, password }, { prisma, res }) => {
+    login: async (root, { username, password }, { prisma, res }) => {
       const user = await prisma.user.findUnique({
         where: { username },
       });
 
+      console.log("user", user);
+
       if (!user) {
-        return errorResponse({ message: "Invalid credentials", data: null });
+        return errorResponse({
+          message: "Invalid credentials",
+          errors: [],
+          data: null,
+        });
       }
 
       const valid = await verifyPassword(password, user.password);
-      if (!valid)
-        return errorResponse({ message: "Invalid credentials", data: null });
+      if (!valid) {
+        return errorResponse({
+          message: "Invalid credentials",
+          errors: [],
+          data: null,
+        });
+      }
 
       const token = signToken(user);
 
@@ -61,18 +72,16 @@ export const authResolver = {
       });
 
       return successResponse({
-        message: `Welcome back ${user.firstName}`,
+        message: `Welcome back ${user.username}`,
         data: {
-          user: {
-            id: user.id,
             userId: user.userId,
+            username:username,
             email: user.email,
             status: user.status,
-          },
         },
       });
     },
-    logout: (_, _, { res }) => {
+    logout: (root, args, { res }) => {
       res.clearCookie("token", {
         httpOnly: true,
         sameSite: "lax",

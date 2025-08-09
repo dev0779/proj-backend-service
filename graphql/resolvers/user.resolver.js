@@ -5,13 +5,13 @@ import { formatValidationErrors } from "../../utils/responseHelpers.js";
 
 export const userResolvers = {
   Query: {
-    users: async (_, __, { prisma }) =>
+    users: async (root, args, { prisma }) =>
       prisma.user.findMany({
         orderBy: { createdAt: "asc" },
         select: {
           userId: true,
-          first_name: true,
-          last_name: true,
+          firstName: true,
+          lastName: true,
           username: true,
           email: true,
           status: true,
@@ -19,7 +19,7 @@ export const userResolvers = {
       }),
   },
   Mutation: {
-    createUser: async (_, args, { prisma }) => {
+    createUser: async (root, args, { prisma }) => {
       const validation = userValidators.safeParse(args.input);
       if (!validation.success) {
         return errorResponse({
@@ -67,7 +67,7 @@ export const userResolvers = {
       }
     },
 
-    editUser: async (_, { input }, { prisma, currentUser }) => {
+    editUser: async (root, { input }, { prisma, currentUser }) => {
       if (!currentUser) {
         return errorResponse({
           message: "Not authenticated",
@@ -104,7 +104,7 @@ export const userResolvers = {
       }
     },
 
-    updateUser: async (_, { userId, input, adminPassword }, { prisma, currentUser }) => {
+    updateUser: async (root, { userId, input, adminPassword }, { prisma, currentUser }) => {
       if (!currentUser) {
         return errorResponse({
           message: "Not authenticated",
@@ -161,7 +161,7 @@ export const userResolvers = {
       }
     },
 
-    deleteUser: async (_, { userId }, { prisma, currentUser }) => {
+    deleteUser: async (root, { userId }, { prisma, currentUser }) => {
       if (!currentUser) {
         return errorResponse({
           message: "Not authenticated",
