@@ -19,7 +19,6 @@ export const authResolver = {
       return successResponse({
         message: `Welcome back ${currentUser.username}`,
         data: {
-          user: {
             userId: currentUser.userId,
             username: currentUser.username,
             firstName: currentUser.firstName,
@@ -27,7 +26,6 @@ export const authResolver = {
             email: currentUser.email,
             status: currentUser.status,
             lastLoggedIn: currentUser.lastLoggedIn,
-          },
         },
       });
     },
@@ -37,9 +35,7 @@ export const authResolver = {
       const user = await prisma.user.findUnique({
         where: { username },
       });
-
-      console.log("user", user);
-
+      
       if (!user) {
         return errorResponse({
           message: "Invalid credentials",
@@ -63,7 +59,7 @@ export const authResolver = {
         httpOnly: true,
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 10000,
+        maxAge: 7 * 24 * 60 * 60 * 1000 ,
       });
 
       await prisma.user.update({
@@ -74,10 +70,13 @@ export const authResolver = {
       return successResponse({
         message: `Welcome back ${user.username}`,
         data: {
-            userId: user.userId,
-            username:username,
-            email: user.email,
-            status: user.status,
+            userId: currentUser.userId,
+            username: currentUser.username,
+            firstName: currentUser.firstName,
+            lastName: currentUser.lastName,
+            email: currentUser.email,
+            status: currentUser.status,
+            lastLoggedIn: currentUser.lastLoggedIn,
         },
       });
     },
@@ -86,7 +85,6 @@ export const authResolver = {
         httpOnly: true,
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       return true;
     },

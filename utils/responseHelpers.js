@@ -9,6 +9,7 @@ export const successResponse = ({ message, data  }) => ({
   success: true,
   message,
   data,
+  errors: [],
 });
 
 export const errorResponse = ({ message, errors = [], data = null }) => ({

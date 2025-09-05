@@ -5,18 +5,33 @@ import { formatValidationErrors } from "../../utils/responseHelpers.js";
 
 export const userResolvers = {
   Query: {
-    users: async (root, args, { prisma }) =>
-      prisma.user.findMany({
-        orderBy: { createdAt: "asc" },
-        select: {
-          userId: true,
-          firstName: true,
-          lastName: true,
-          username: true,
-          email: true,
-          status: true,
-        },
-      }),
+    users: async (root, args, { prisma }) => {
+      try {
+        const users = await prisma.user.findMany({
+          orderBy: { createdAt: "asc" },
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            email: true,
+            status: true,
+          },
+        });
+        return successResponse({
+          message: 'Avaliable users',
+          data:users
+        })
+        
+      } catch (err) {
+        return errorResponse({
+          message: 'Fail to fetch users',
+          data: null,
+          errors:[]
+        })
+      }
+    }
+
   },
   Mutation: {
     createUser: async (root, args, { prisma }) => {
@@ -61,7 +76,7 @@ export const userResolvers = {
         console.error("createUser error:", error);
         return errorResponse({
           message: "Failed to create user.",
-          errors: [],
+          errors: [error.message],
           data: null,
         });
       }
@@ -98,7 +113,7 @@ export const userResolvers = {
         console.error("editUser error:", error);
         return errorResponse({
           message: "Failed to update user",
-          errors: [],
+          errors: [error.message],
           data: null,
         });
       }
@@ -155,7 +170,7 @@ export const userResolvers = {
         console.error("updateUser error:", error);
         return errorResponse({
           message: "Failed to update user",
-          errors: [],
+          errors: [error.message],
           data: null,
         });
       }
@@ -203,7 +218,7 @@ export const userResolvers = {
         console.error("deleteUser error:", error);
         return errorResponse({
           message: "Failed to delete user.",
-          errors: [],
+          errors: [error.message],
           data: null,
         });
       }

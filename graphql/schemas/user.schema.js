@@ -51,14 +51,10 @@ export const userTypeDefs = gql`
     status: UserRole
   }
 
-  type Query {
-    users: [User!]!
-  }
-
   type CreateUserResponse {
     success: Boolean!
     message: String!
-    user: User
+    data: User
   }
 
   type UpdateUserResponse {
@@ -71,6 +67,17 @@ export const userTypeDefs = gql`
     success: Boolean!
     message: String!
     data: User
+  }
+
+  type UsersResponse{
+    success: Boolean!
+    message: String!
+    data:[User!]
+    errors[String!]
+  }
+  
+  type Query {
+    users: UsersResponse!
   }
 
   type Mutation {

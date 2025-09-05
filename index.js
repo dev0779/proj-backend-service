@@ -29,7 +29,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req, res }) => ({
-    user: req.user,
+    currentUser: req.user,
     prisma,
     res,
   }),
